@@ -22,6 +22,7 @@ partial class Build
     readonly string LatestMavenVersion;
 
     Target LatestVersionInformation => _ => _
+        .ProceedAfterFailure()
         .Executes(() =>
         {
             Log.Information("Latest SlideToAct GitHub release version: {LatestGitHubReleaseVersion}",
