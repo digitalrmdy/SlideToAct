@@ -34,3 +34,4 @@ jobs:
         env:
           PackageFeedUrl: ${{ secrets.PACKAGE_FEED_URL }}
           PackageFeedApiKey: ${{ secrets.PACKAGE_FEED_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
