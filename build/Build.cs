@@ -64,19 +64,19 @@ partial class Build : NukeBuild
                 .SetVersion(GitVersion.NuGetVersion));
         });
 
-    [Secret] [Parameter] readonly string MyGetFeedUrl;
-    [Secret] [Parameter] readonly string MyGetApiKey;
+    [Secret] [Parameter] readonly string PackageFeedUrl;
+    [Secret] [Parameter] readonly string PackageFeedApiKey;
 
     Target PublishPackage => _ => _
         .DependsOn(Pack)
-        .Requires(() => !string.IsNullOrEmpty(MyGetFeedUrl) && !string.IsNullOrEmpty(MyGetApiKey))
+        .Requires(() => !string.IsNullOrEmpty(PackageFeedUrl) && !string.IsNullOrEmpty(PackageFeedApiKey))
         .Executes(() =>
         {
             IEnumerable<AbsolutePath> artifactPackages = ArtifactsDirectory.GlobFiles("*.nupkg");
 
             DotNetTasks.DotNetNuGetPush(s => s
-                .SetSource(MyGetFeedUrl)
-                .SetApiKey(MyGetApiKey)
+                .SetSource(PackageFeedUrl)
+                .SetApiKey(PackageFeedApiKey)
                 .EnableSkipDuplicate()
                 .CombineWith(artifactPackages, (_, v) => _
                     .SetTargetPath(v)));

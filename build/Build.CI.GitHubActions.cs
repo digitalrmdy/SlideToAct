@@ -16,7 +16,7 @@ using Nuke.Common.CI.GitHubActions;
     FetchDepth = 0,
     OnPushTags = new[] { "'*.*.*'" },
     InvokedTargets = new[] { nameof(PublishPackage) },
-    ImportSecrets = new[] { nameof(MyGetFeedUrl), nameof(MyGetApiKey) },
+    ImportSecrets = new[] { nameof(PackageFeedUrl), nameof(PackageFeedApiKey) },
     CacheKeyFiles = new string[0],
     CacheIncludePatterns = new string[0])]
 partial class Build

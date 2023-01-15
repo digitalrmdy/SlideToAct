@@ -32,5 +32,5 @@ jobs:
       - name: Run './build.cmd PublishPackage'
         run: ./build.cmd PublishPackage
         env:
-          MyGetFeedUrl: ${{ secrets.MY_GET_FEED_URL }}
-          MyGetApiKey: ${{ secrets.MY_GET_API_KEY }}
+          PackageFeedUrl: ${{ secrets.PACKAGE_FEED_URL }}
+          PackageFeedApiKey: ${{ secrets.PACKAGE_FEED_API_KEY }}
