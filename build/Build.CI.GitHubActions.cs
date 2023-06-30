@@ -3,7 +3,7 @@ using Nuke.Common.CI.GitHubActions;
 [GitHubActions(
     "PR",
     GitHubActionsImage.MacOs12,
-    AutoGenerate = true,
+    AutoGenerate = false,
     EnableGitHubToken = true,
     FetchDepth = 0,
     OnPullRequestBranches = new[] { "main" },
@@ -13,7 +13,7 @@ using Nuke.Common.CI.GitHubActions;
 [GitHubActions(
     "Publish",
     GitHubActionsImage.MacOs12,
-    AutoGenerate = true,
+    AutoGenerate = false,
     EnableGitHubToken = true,
     FetchDepth = 0,
     OnPushTags = new[] { "'*.*.*'" },
