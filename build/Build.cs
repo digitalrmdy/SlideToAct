@@ -1,14 +1,13 @@
 using System.Collections.Generic;
 using Nuke.Common;
+using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
-using Nuke.Common.Tools.MSBuild;
-using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
-using static Nuke.Common.IO.FileSystemTasks;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 partial class Build : NukeBuild
 {
@@ -23,45 +22,64 @@ partial class Build : NukeBuild
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution(GenerateProjects = true)] readonly Solution Solution;
+    
+    [GitRepository] readonly GitRepository GitRepository;
 
     [GitVersion] readonly GitVersion GitVersion;
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
 
-    Target CleanCompilationFolders => _ => _
+    Target Clean => _ => _
+        .Before(Restore)
         .After(LatestVersionInformation)
-        .Executes(() => SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory));
+        .Executes(() =>
+        {
+            SourceDirectory
+                .GlobDirectories("**/bin", "**/obj")
+                .ForEach(ap => ap.DeleteDirectory());
+            ArtifactsDirectory.CreateOrCleanDirectory();
+        });
+
+    Target Restore => _ => _
+        .Executes(() =>
+        {
+            DotNetRestore(s => s
+                .SetProjectFile(Solution)
+                .EnableDeterministic()
+                .EnableContinuousIntegrationBuild());
+        });
 
     Target Compile => _ => _
-        .DependsOn(CleanCompilationFolders)
+        .DependsOn(Restore)
         .DependsOn(LatestVersionInformation)
         .Executes(() =>
         {
-            MSBuildTasks.MSBuild(s => s
-                .SetTargetPath(Solution.SlideToAct_Binding)
+            DotNetBuild(s => s
+                .EnableNoRestore()
+                .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
+                .SetDeterministic(IsServerBuild)
+                .SetContinuousIntegrationBuild(IsServerBuild)
+                .SetVersion(GitVersion.FullSemVer)
                 .SetAssemblyVersion(GitVersion.AssemblySemVer)
                 .SetFileVersion(GitVersion.AssemblySemFileVer)
-                .SetInformationalVersion(GitVersion.InformationalVersion)
-                .SetTargets("Build"));
+                .SetInformationalVersion(GitVersion.InformationalVersion));
         });
 
-    Target CleanArtifactsFolder => _ => _
-        .After(Compile)
-        .Executes(() => EnsureCleanDirectory(ArtifactsDirectory));
-
     Target Pack => _ => _
-        .DependsOn(CleanArtifactsFolder)
-        .DependsOn(Compile)
+        .DependsOn(Clean, Compile)
         .Executes(() =>
         {
-            NuGetTasks.NuGetPack(s => s
-                .DisableBuild()
-                .SetTargetPath(Solution.SlideToAct_Binding)
+            DotNetPack(s => s
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetProject(Solution)
                 .SetConfiguration(Configuration)
-                .SetOutputDirectory(ArtifactsDirectory)
-                .SetVersion(GitVersion.NuGetVersion));
+                .SetVersion(GitVersion.NuGetVersion)
+                .SetProperty("RepositoryBranch", GitRepository.Branch)
+                .SetProperty("RepositoryCommit", GitRepository.Commit)
+                .SetOutputDirectory(ArtifactsDirectory));
         });
 
     [Secret] [Parameter] readonly string PackageFeedUrl;
@@ -74,7 +92,7 @@ partial class Build : NukeBuild
         {
             IEnumerable<AbsolutePath> artifactPackages = ArtifactsDirectory.GlobFiles("*.nupkg");
 
-            DotNetTasks.DotNetNuGetPush(s => s
+            DotNetNuGetPush(s => s
                 .SetSource(PackageFeedUrl)
                 .SetApiKey(PackageFeedApiKey)
                 .EnableSkipDuplicate()
