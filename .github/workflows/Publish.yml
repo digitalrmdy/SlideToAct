@@ -22,14 +22,14 @@ on:
       - '*.*.*'
 
 jobs:
-  macos-12:
-    name: macos-12
-    runs-on: macos-12
+  windows-latest:
+    name: windows-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Run './build.cmd PublishPackage'
+      - name: 'Run: PublishPackage'
         run: ./build.cmd PublishPackage
         env:
           PackageFeedUrl: ${{ secrets.PACKAGE_FEED_URL }}
